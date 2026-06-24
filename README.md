@@ -17,8 +17,11 @@
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Convenção de pastas](#convenção-de-pastas)
 - [Como o conteúdo foi organizado](#como-o-conteúdo-foi-organizado)
+- [Download do protótipo compilado](#download-do-protótipo-compilado)
 - [Como executar o protótipo desktop](#como-executar-o-protótipo-desktop)
 - [Como rodar os testes](#como-rodar-os-testes)
+- [Como gerar uma nova versão (release)](#como-gerar-uma-nova-versão-release)
+- [Inicializador automático](#inicializador-automático)
 - [Referências bibliográficas](#referências-bibliográficas)
 
 ---
@@ -292,9 +295,111 @@ Essa organização permite:
 
 ---
 
-## Como executar o protótipo desktop
+## Download do protótipo compilado
+
+O executável pronto (fat jar com a Kotlin stdlib embutida, sem
+dependências externas) é publicado em **GitHub Releases** a cada tag
+`v*`. Para baixar a versão mais recente:
+
+```
+https://github.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/releases/latest
+```
+
+O asset anexado é `usuarios-desktop-1.0.0-all.jar` (~1,8 MB). Após o
+download, basta rodar `java -jar` apontando para o arquivo (próxima
+seção).
+
+### Pré-requisito: Java (JRE/JDK)
+
+| Item                | Versão                    |
+|---------------------|---------------------------|
+| Mínima              | **Java 11** (LTS)         |
+| Recomendada         | **Java 11** (LTS)         |
+| Testada em build    | Temurin JDK 11            |
+| Fornecedor sugerido | Eclipse Temurin / Adoptium|
+
+A porta de entrada do jar é `Main-Class: br.com.unicesumar.mapa.desktop.ui.UsuariosApp`,
+declarada no `MANIFEST.MF`. Em sistemas sem Java, o comando abaixo não
+será reconhecido — instale o JRE antes de prosseguir.
+
+#### Como verificar se o Java já está instalado
 
 ```bash
+# Linux / macOS (bash / zsh)
+java -version
+```
+
+```powershell
+# Windows (PowerShell)
+java -version
+```
+
+Saída esperada (exemplo):
+
+```
+openjdk version "11.0.25" 2024-04-16
+OpenJDK Runtime Environment Temurin-11.0.25+9 (build 11.0.25+9)
+OpenJDK 64-Bit Server VM Temurin-11.0.25+9 (build 11.0.25+9, mixed mode)
+```
+
+#### Onde baixar o Java
+
+| Sistema     | Distribuição recomendada          | Link de download                                                                                              |
+|-------------|-----------------------------------|---------------------------------------------------------------------------------------------------------------|
+| Windows     | Eclipse Temurin 11 (LTS) `.msi`   | <https://adoptium.net/temurin/releases/?version=11&os=windows&arch=x64&package=jdk>                          |
+| Windows     | Eclipse Temurin 11 (LTS) `.zip`   | <https://adoptium.net/temurin/releases/?version=11&os=windows&arch=x64&package=jdk&jvmVariant=hotspot#x64>    |
+| Linux       | Eclipse Temurin 11 (LTS) `.tar.gz`| <https://adoptium.net/temurin/releases/?version=11&os=linux&arch=x64&package=jdk>                             |
+| macOS       | Eclipse Temurin 11 (LTS) `.pkg`   | <https://adoptium.net/temurin/releases/?version=11&os=mac&arch=x64&package=jdk>                              |
+| Qualquer SO | Página geral do Adoptium          | <https://adoptium.net/>                                                                                       |
+
+> Quem já tem **Oracle JDK**, **Azul Zulu**, **Amazon Corretto** ou
+> **Microsoft Build of OpenJDK** em versão 11+ também funciona — qualquer
+> build *Java SE 11 LTS* ou superior serve. O jar não depende de uma
+> distribuição específica, apenas do contrato da plataforma Java SE.
+
+---
+
+## Como executar o protótipo desktop
+
+### Opção A — a partir do `.jar` baixado (recomendado)
+
+Independente do sistema operacional, o comando é o mesmo: `java -jar`.
+
+**Windows (PowerShell):**
+
+```powershell
+# 1. Baixar o jar da release mais recente
+Invoke-WebRequest -Uri "https://github.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/releases/latest/download/usuarios-desktop-1.0.0-all.jar" -OutFile "usuarios-desktop-1.0.0-all.jar"
+
+# 2. Executar
+java -jar .\usuarios-desktop-1.0.0-all.jar
+```
+
+> Equivalente em cmd.exe: `curl -L -o usuarios-desktop-1.0.0-all.jar https://github.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/releases/latest/download/usuarios-desktop-1.0.0-all.jar`
+
+**Linux / macOS (bash / zsh):**
+
+```bash
+# 1. Baixar o jar da release mais recente
+curl -L -o usuarios-desktop-1.0.0-all.jar \
+  https://github.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/releases/latest/download/usuarios-desktop-1.0.0-all.jar
+
+# 2. Executar
+java -jar ./usuarios-desktop-1.0.0-all.jar
+```
+
+> Se preferir `wget`: `wget -O usuarios-desktop-1.0.0-all.jar https://github.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/releases/latest/download/usuarios-desktop-1.0.0-all.jar`
+
+### Opção B — gerando o `.jar` localmente a partir do código-fonte
+
+Requer **JDK 11** (LTS) e **Maven 3.8+** instalados e no
+`PATH`.
+
+```bash
+# Clonar e entrar no repositório
+git clone https://github.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa.git
+cd programacao-dispositivos-moveis-unicesumar-mapa
+
 # Build (gera fat jar com Kotlin stdlib embutido)
 mvn -DskipTests package
 
@@ -302,9 +407,19 @@ mvn -DskipTests package
 java -jar target/usuarios-desktop-1.0.0-all.jar
 ```
 
-A janela abre com 360x720 px fixos (visual mobile), seed de 6 usuários
-pré-carregada, e botões Listar / Ativos / Buscar / Agrupar / Resetar + FAB
-rosa de Incluir. As mutações valem apenas em runtime.
+No Windows (PowerShell), basta trocar `java -jar target/...` por
+`java -jar .\target\usuarios-desktop-1.0.0-all.jar` (o resto é
+idêntico).
+
+### O que esperar ao abrir
+
+A janela Swing abre com **360x720 px fixos** (visual mobile), seed de
+**6 usuários** pré-carregada, e botões **Listar / Ativos / Buscar /
+Agrupar / Resetar** + **FAB rosa de Incluir** no canto inferior direito.
+As mutações valem apenas em runtime — fechar o `.jar` descarta as
+alterações e a próxima abertura volta à seed.
+
+---
 
 ## Como rodar os testes
 
@@ -312,10 +427,102 @@ rosa de Incluir. As mutações valem apenas em runtime.
 mvn test
 ```
 
-Suíte JUnit 5 (15+ casos) cobrindo:
+Suíte JUnit 5 (18 casos) cobrindo:
 
 - **Igualdade estrutural** da `data class Usuario`.
 - **Pipeline funcional**: `filter`, `asSequence → sortedBy → toList`, `groupBy`.
 - **CRUD**: `incluir` (com geração automática de ID), `excluir` (por id),
   `resetar` (volta ao estado do seed).
 - **Imutabilidade da fronteira**: `listarTodos()` devolve cópia desacoplada.
+
+Saída esperada (resumo): `Tests run: 18, Failures: 0, Errors: 0,
+Skipped: 0` e `BUILD SUCCESS`.
+
+---
+
+## Como gerar uma nova versão (release)
+
+O workflow `.github/workflows/release.yml` publica automaticamente uma
+GitHub Release com o fat jar sempre que uma tag `v*` é enviada ao
+repositório.
+
+```bash
+# 1. Garantir que main está atualizado e limpo
+git checkout main
+git pull
+
+# 2. Criar tag semântica (MAJOR.MINOR.PATCH)
+git tag v1.0.0
+
+# 3. Enviar a tag para o GitHub (dispara o workflow)
+git push origin v1.0.0
+```
+
+Acompanhe a execução em `Actions → release`. Ao final, a release
+estará visível em `https://github.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/releases/tag/v1.0.0`
+com o jar anexado para download. Também é possível disparar o
+workflow manualmente em `Actions → release → Run workflow` (útil para
+republicar a mesma versão sem bump de tag).
+
+---
+
+## Inicializador automático
+
+Se você **não quer instalar o Java manualmente nem digitar comandos
+longos**, basta baixar um pequeno script na raiz do repositório e
+clicar duas vezes (ou rodar no terminal). O script cuida de tudo:
+localiza um JDK existente ou baixa o Eclipse Temurin 11 LTS
+silenciosamente, baixa o `.jar` da release mais recente do GitHub
+e executa a interface Swing.
+
+### One-liner: baixar e rodar direto do terminal
+
+Cole **uma** das linhas abaixo em um terminal e pressione Enter. O
+script é baixado, tornado executável e iniciado em sequência — sem
+clonar o repositório inteiro.
+
+**Windows (PowerShell):**
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/main/EXECUTAR.bat" -OutFile "EXECUTAR.bat"; .\EXECUTAR.bat
+```
+
+**Linux / macOS (bash / zsh):**
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/main/EXECUTAR.sh -o EXECUTAR.sh && chmod +x EXECUTAR.sh && ./EXECUTAR.sh
+```
+
+> No macOS, se aparecer um aviso sobre não poder executar um
+> arquivo baixado da Internet, use o Finder ou rode
+> `xattr -d com.apple.quarantine EXECUTAR.sh` e tente de novo.
+
+### Passo a passo alternativo (clicar duas vezes)
+
+Se preferir baixar manualmente:
+
+| SO      | Arquivo          | O que o script faz                                                                                              |
+|---------|------------------|----------------------------------------------------------------------------------------------------------------|
+| Windows | `EXECUTAR.bat`   | 1. Procura JDK 11+ em `C:\Program Files\Java\` ou `%JAVA_HOME%`. 2. Se não houver, baixa Temurin 11 (~170 MB) e extrai em `C:\Program Files\Java\jdk-11` (UAC se necessário). 3. Cria `C:\MAPA\` e baixa o `.jar` do GitHub Releases. 4. Executa `java -jar C:\MAPA\usuarios-desktop-1.0.0-all.jar`. |
+| Linux   | `EXECUTAR.sh`    | 1. Procura JDK 11+ no PATH, `JAVA_HOME`, `/usr/lib/jvm/`. 2. Se não houver, baixa Temurin 11 (~170 MB) e extrai em `$HOME/.local/share/mapa-java/jdk-11` (sem sudo). 3. Cria `~/MAPA/` e baixa o `.jar` do GitHub Releases. 4. Executa `java -jar ~/MAPA/usuarios-desktop-1.0.0-all.jar`. |
+| macOS   | `EXECUTAR.sh`    | 1. Procura JDK 11+ no PATH, `JAVA_HOME`, Homebrew, `/Library/Java/JavaVirtualMachines/`. 2. Se não houver, baixa Temurin 11 (~170 MB) e extrai em `$HOME/Library/Application Support/mapa-java/jdk-11` (sem sudo). 3. Cria `~/MAPA/` e baixa o `.jar` do GitHub Releases. 4. Executa `java -jar ~/MAPA/usuarios-desktop-1.0.0-all.jar`. |
+
+**Baixar manualmente:**
+
+```bash
+# Windows (PowerShell)
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/main/EXECUTAR.bat" -OutFile "EXECUTAR.bat"
+```
+
+```bash
+# Linux / macOS (bash / zsh)
+curl -fsSL https://raw.githubusercontent.com/WesleySouzaSilva/programacao-dispositivos-moveis-unicesumar-mapa/main/EXECUTAR.sh -o EXECUTAR.sh
+chmod +x EXECUTAR.sh
+```
+
+Depois é só **clicar duas vezes** (Windows) ou rodar `./EXECUTAR.sh`
+no terminal (Linux/macOS).
+
+> Na primeira execução o script baixará o Java e o `.jar`
+> (~170 MB + ~2 MB). Execuções seguintes reutilizam o que já está
+> em disco.
