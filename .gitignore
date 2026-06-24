@@ -1,0 +1,9 @@
+# Documentos da atividade MAPA (não versionar — manter apenas localmente)
+*.docx
+*.doc
+
+# Anotações e rascunhos em texto puro
+*.txt
+
+# Cache e estado interno do OpenClaude
+.openclaude/
