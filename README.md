@@ -11,11 +11,14 @@
 
 - [Visão geral](#visão-geral)
 - [Arquitetura do projeto Kotlin](#arquitetura-do-projeto-kotlin)
+- [Etapa 2 — protótipo desktop](#etapa-2--protótipo-desktop-emulador-mobile)
 - [Questões respondidas](#questões-respondidas)
 - [Snippets de código](#snippets-de-código)
 - [Estrutura do repositório](#estrutura-do-repositório)
 - [Convenção de pastas](#convenção-de-pastas)
 - [Como o conteúdo foi organizado](#como-o-conteúdo-foi-organizado)
+- [Como executar o protótipo desktop](#como-executar-o-protótipo-desktop)
+- [Como rodar os testes](#como-rodar-os-testes)
 - [Referências bibliográficas](#referências-bibliográficas)
 
 ---
@@ -93,6 +96,83 @@ Architecture, ainda que compactada para o escopo da atividade:
 
 ---
 
+## Etapa 2 — protótipo desktop (emulador mobile)
+
+Além da resposta dissertativa, a Etapa 2 da atividade pede um **protótipo
+executável** que materialize os conceitos das três questões em um app real.
+Este repositório entrega esse protótipo como uma aplicação Swing
+auto-contida, emulando visualmente um app Android rodando em um smartphone:
+
+```
+┌────────────────────────────────────┐
+│ ░░░ AppBar azul com gradiente ░░░░ │  ← topo estilo Material
+│ ░ Usuários                         │
+│ ░ MAPA Mobile — Kotlin             │
+├────────────────────────────────────┤
+│ [Listar] [Ativos] [Buscar] [...]   │  ← chips coloridos com hover
+├────────────────────────────────────┤
+│ (●A)  Ana Lima                      │  ← lista com avatar circular
+│       ana@empresa.com.br            │
+│       Engenharia                    │
+├────────────────────────────────────┤
+│ (●B)  Bruno Sá   • inativo          │
+│       bruno.sa@empresa.com.br       │
+│       Engenharia                    │
+├────────────────────────────────────┤
+│              [ + ]                   │  ← FAB rosa circular flutuante
+│  6 usuário(s)                        │
+│  Lista inicial (seed)               │
+└────────────────────────────────────┘
+```
+
+### Arquitetura em camadas do protótipo
+
+| Camada        | Pacote                                          | Responsabilidade                                 |
+|---------------|-------------------------------------------------|--------------------------------------------------|
+| Domínio       | `br.com.unicesumar.mapa.desktop.domain`         | `data class Usuario` (modelo imutável)          |
+| Dados         | `br.com.unicesumar.mapa.desktop.data`           | `RepositorioEmMemoria` (seed + CRUD + pipelines)|
+| Apresentação  | `br.com.unicesumar.mapa.desktop.ui`             | `UsuariosApp` (Swing, paleta Material, FAB)     |
+
+### Pipeline de coleções exercitado em runtime
+
+| Operação Kotlin         | Onde aparece no protótipo                              | Questão |
+|-------------------------|--------------------------------------------------------|---------|
+| `MutableList` (CRUD)    | `RepositorioEmMemoria.usuarios` (interno, privado)    | **B**   |
+| `List` imutável exposto | `listarTodos() / listarAtivos() / buscarPorPrefixo()` | **B**   |
+| `filter`                | `listarAtivos` — apenas usuários com `ativo == true`   | **C**   |
+| `asSequence → sortedBy` | `buscarPorPrefixo` — pipeline preguiçoso ordenado      | **C**   |
+| `groupBy`               | `agruparPorInicial` — índice por letra (A, B, C, ...) | **C**   |
+| `map` (DTO de UI)       | Renderização da `JList` (string `"${nome} <${email}"`) | **C**   |
+
+### Decisões de UI para emular o visual mobile
+
+A janela é fixada em **360x720 px** (proporção típica de smartphone) e
+aplica convenções de Material Design para dar a sensação de uso em celular,
+apesar de rodar como `.jar` desktop:
+
+- **AppBar** com gradiente azul (Blue 600 → Blue 800) e título branco.
+- **Lista de cards** com **avatar circular colorido** (iniciais + paleta).
+- **Botões em chip** arredondados (Listar / Ativos / Buscar / Agrupar / Resetar).
+- **Campo de busca** arredondado com borda sutil.
+- **FAB rosa** circular no canto inferior direito (Incluir usuário).
+- **Status bar inferior** com contador + última ação (padrão snackbar).
+- **Excluir** por clique-duplo na linha (UX mobile sem menus de contexto).
+
+A camada de apresentação é totalmente separada do domínio — o que chega na
+UI é sempre uma `List<Usuario>` imutável; mutações só acontecem via métodos
+do repositório.
+
+### Comportamento esperado
+
+- O app abre com **6 usuários de seed** pré-carregados (lista fixa).
+- Botão **Incluir** abre diálogo com nome/e-mail/setor e gera novo ID.
+- Botão **Excluir** (clique-duplo na linha) remove o usuário selecionado.
+- Botão **Resetar** restaura o estado original da seed (com confirmação).
+- Mutações valem **só em runtime** — fechar o `.jar` descarta alterações,
+  conforme exigido pela Etapa 2.
+
+---
+
 ## Questões respondidas
 
 A resposta completa está em [`mapa-resposta-revisada.md`](./mapa-resposta-revisada.md).
@@ -142,6 +222,15 @@ copiados para um projeto Android real sem dependências extras.
 ├── README.md                          # Este arquivo
 ├── mapa-resposta-revisada.md          # Resposta dissertativa (Markdown, fonte da verdade)
 ├── snippets-kotlin.kt                 # Snippets Kotlin compiláveis usados na resposta
+├── pom.xml                            # Build Maven do protótipo desktop (Etapa 2)
+├── src/
+│   ├── main/kotlin/br/com/unicesumar/mapa/desktop/
+│   │   ├── domain/Usuario.kt          # data class (camada de domínio)
+│   │   ├── data/RepositorioEmMemoria.kt # CRUD + pipelines (camada de dados)
+│   │   └── ui/UsuariosApp.kt          # Swing UI mobile-style (camada de apresentação)
+│   └── test/kotlin/br/com/unicesumar/mapa/desktop/
+│       ├── domain/UsuarioTest.kt       # JUnit 5: igualdade, copy, componentN
+│       └── data/RepositorioEmMemoriaTest.kt # JUnit 5: CRUD + filter/sortedBy/groupBy
 └── .gitignore                         # Exclusões de versionamento
 ```
 
@@ -154,6 +243,9 @@ copiados para um projeto Android real sem dependências extras.
 | `README.md`                   | Apresentação do projeto e arquitetura                           |
 | `mapa-resposta-revisada.md`   | Resposta final, fonte de verdade editável (diff textual limpo)  |
 | `snippets-kotlin.kt`          | Camadas de domínio / ViewModel / apresentação como evidência    |
+| `pom.xml`                     | Build Maven do protótipo desktop (Etapa 2)                      |
+| `src/main/kotlin/...`         | Fontes Kotlin do protótipo (domain / data / ui)                 |
+| `src/test/kotlin/...`         | Testes JUnit 5 cobrindo CRUD + pipelines                        |
 | `.gitignore`                  | Exclui artefatos binários e estado interno do assistente        |
 
 A camada de **entrega oficial** (documento Word formatado conforme template
@@ -197,3 +289,33 @@ Essa organização permite:
   Disponível em: <https://kotlinlang.org/docs/collections-overview.html>.
 - SENNE, E. A. **Programação para dispositivos móveis**. Florianópolis:
   Arqué, 2025.
+
+---
+
+## Como executar o protótipo desktop
+
+```bash
+# Build (gera fat jar com Kotlin stdlib embutido)
+mvn -DskipTests package
+
+# Executar
+java -jar target/usuarios-desktop-1.0.0-all.jar
+```
+
+A janela abre com 360x720 px fixos (visual mobile), seed de 6 usuários
+pré-carregada, e botões Listar / Ativos / Buscar / Agrupar / Resetar + FAB
+rosa de Incluir. As mutações valem apenas em runtime.
+
+## Como rodar os testes
+
+```bash
+mvn test
+```
+
+Suíte JUnit 5 (15+ casos) cobrindo:
+
+- **Igualdade estrutural** da `data class Usuario`.
+- **Pipeline funcional**: `filter`, `asSequence → sortedBy → toList`, `groupBy`.
+- **CRUD**: `incluir` (com geração automática de ID), `excluir` (por id),
+  `resetar` (volta ao estado do seed).
+- **Imutabilidade da fronteira**: `listarTodos()` devolve cópia desacoplada.
